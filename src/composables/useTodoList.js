@@ -1,0 +1,63 @@
+import { computed, ref } from "vue";
+
+export const useTodoList = () => {
+  const ls = localStorage.todoList;
+  const todoListRef = ref([]);
+  const editId = ref(-1); // リアクティブにします
+  todoListRef.value = ls ? JSON.parse(ls) : [];
+
+  const add = (task) => {
+    const id = new Date().getTime();
+    // 「checked: false」を追加
+    todoListRef.value.push({ id: id, task: task, checked: false });
+    localStorage.todoList = JSON.stringify(todoListRef.value);
+  };
+
+  const show = (id) => {
+    const todo = findById(id);
+    editId.value = id;
+    return todo.task; // 画面処理させるために返します
+  };
+
+  const edit = (task) => {
+    const todo = findById(editId.value);
+    const idx = findIndexById(editId.value);
+    todo.task = task;
+    todoListRef.value.splice(idx, 1, todo);
+    localStorage.todoList = JSON.stringify(todoListRef.value);
+    editId.value = -1;
+  };
+
+  const del = (id) => {
+    const todo = findById(id);
+    const delMsg = `「${todo.task}」を削除しますか？`;
+    if (!confirm(delMsg)) return;
+
+    const idx = findIndexById(id);
+    todoListRef.value.splice(idx, 1);
+    localStorage.todoList = JSON.stringify(todoListRef.value);
+  };
+
+  const check = (id) => {
+    const todo = findById(id);
+    const idx = findIndexById(id);
+    todo.checked = !todo.checked;
+    todoListRef.value.splice(idx, 1, todo);
+    localStorage.todoList = JSON.stringify(todoListRef.value);
+  };
+
+  const countFin = computed(() => {
+    const finArr = todoListRef.value.filter((todo) => todo.checked);
+    return finArr.length;
+  });
+
+  const findById = (id) => {
+    return todoListRef.value.find((todo) => todo.id === id);
+  };
+
+  const findIndexById = (id) => {
+    return todoListRef.value.findIndex((todo) => todo.id === id);
+  };
+
+  return { todoListRef, add, show, edit, del, check, countFin };
+};
